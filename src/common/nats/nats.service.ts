@@ -30,15 +30,18 @@ export class NatsService {
     );
   }
 
-  async fetchAndClean(
-    entityId: number | undefined,
+  async fetchAndClean(entityId: object, service: string, keysToOmit: string[]) {
+    const data = await this.firstValue(service, entityId);
+    if (!data) return null;
+    keysToOmit.forEach((key) => delete data[key]);
+    return data;
+  }
+  async fetchValidatedRelation(
+    entityId: number,
     service: string,
     keysToOmit: string[],
   ) {
     if (!entityId) return null;
-    const data = await this.firstValue(service, { id: entityId });
-    if (!data) return null;
-    keysToOmit.forEach((key) => delete data[key]);
-    return data;
+    return await this.fetchAndClean({ id: entityId }, service, keysToOmit);
   }
 }
