@@ -10,4 +10,8 @@ export class KioskController {
   getDataPerson(@Payload() identityCard: string) {
     return this.kioskService.getDataPerson(identityCard);
   }
+  @MessagePattern('kiosk.saveDataKioskAuth')
+  saveDataKioskAuth(@Payload() data: any) {
+    return this.kioskService.saveDataKioskAuth(data);
+  }
 }
