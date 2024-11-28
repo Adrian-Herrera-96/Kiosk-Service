@@ -1,9 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { NatsService } from 'src/common';
+import { KioskAuthenticationData } from './entities/kiosk-authentication-data.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class KioskService {
-  constructor(private readonly natsService: NatsService) {}
+  constructor(
+    private readonly natsService: NatsService,
+    @InjectRepository(KioskAuthenticationData)
+    private kioskAuthenticationDataRepository: Repository<KioskAuthenticationData>,
+  ) {}
 
   async getDataPerson(identityCard: string) {
     const dataPerson = await this.natsService.fetchAndClean(
@@ -49,5 +56,9 @@ export class KioskService {
         .join(' '),
       ...data,
     };
+  }
+  async saveDataKioskAuth(data: any) {
+    const dataSaved = await this.kioskAuthenticationDataRepository.save(data);
+    return dataSaved;
   }
 }
