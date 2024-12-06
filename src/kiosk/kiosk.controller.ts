@@ -14,4 +14,16 @@ export class KioskController {
   saveDataKioskAuth(@Payload() data: any) {
     return this.kioskService.saveDataKioskAuth(data);
   }
+
+  @MessagePattern('kiosk.savePhotos')
+  async savePhotos(
+    @Payload()
+    data: {
+      personId: number;
+      photoIdentityCard: Buffer;
+      photoFace: Buffer;
+    },
+  ) {
+    return this.kioskService.savePhotos(data);
+  }
 }
