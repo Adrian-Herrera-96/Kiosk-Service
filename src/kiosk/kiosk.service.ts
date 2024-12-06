@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { NatsService } from 'src/common';
+import { FtpService, NatsService } from 'src/common';
 import { KioskAuthenticationData } from './entities/kiosk-authentication-data.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,6 +10,7 @@ export class KioskService {
     private readonly natsService: NatsService,
     @InjectRepository(KioskAuthenticationData)
     private kioskAuthenticationDataRepository: Repository<KioskAuthenticationData>,
+    private readonly ftp: FtpService,
   ) {}
 
   async getDataPerson(identityCard: string) {
@@ -60,5 +61,50 @@ export class KioskService {
   async saveDataKioskAuth(data: any) {
     const dataSaved = await this.kioskAuthenticationDataRepository.save(data);
     return dataSaved;
+  }
+
+  async savePhotos(data: {
+    personId: number;
+    photoIdentityCard?: Buffer;
+    photoFace?: Buffer;
+  }) {
+    const now = new Date();
+    const formattedDate = this.formatCurrentDate(now);
+    const basePaths = {
+      ci: `Person/images/kiosk/${data.personId}/ci`,
+      face: `Person/images/kiosk/${data.personId}/face`,
+    };
+    await this.ftp.connectToFtp();
+    if (data.photoIdentityCard) {
+      await this.uploadPhotoToFtp(
+        data.photoIdentityCard,
+        basePaths.ci,
+        `${formattedDate}-photoIdentityCard.png`,
+      );
+    }
+    if (data.photoFace) {
+      await this.uploadPhotoToFtp(
+        data.photoFace,
+        basePaths.face,
+        `${formattedDate}-face.png`,
+      );
+    }
+
+    await this.ftp.onDestroy();
+    return { message: 'Fotos guardadas correctamente' };
+  }
+  private formatCurrentDate(date: Date): string {
+    const datePart = date.toLocaleDateString('en-GB');
+    const timePart = date.toLocaleTimeString('en-GB').replace(/:/g, '');
+    return `${datePart.split('/').reverse().join('-')}-${timePart}`;
+  }
+
+  private async uploadPhotoToFtp(
+    photoBuffer: Buffer,
+    basePath: string,
+    fileName: string,
+  ): Promise<void> {
+    const filePath = `${basePath}/${fileName}`;
+    await this.ftp.uploadFile(Buffer.from(photoBuffer), basePath, filePath);
   }
 }
