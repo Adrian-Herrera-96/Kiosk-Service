@@ -26,4 +26,9 @@ export class KioskController {
   ) {
     return this.kioskService.savePhotos(data);
   }
+
+  @MessagePattern('kiosk.getFingerprintComparison')
+  getFingerprintComparison(@Payload() personId: number) {
+    return this.kioskService.getFingerprintComparison(personId);
+  }
 }

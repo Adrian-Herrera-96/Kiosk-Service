@@ -107,4 +107,72 @@ export class KioskService {
     const filePath = `${basePath}/${fileName}`;
     await this.ftp.uploadFile(Buffer.from(photoBuffer), basePath, filePath);
   }
+
+  async getFingerprintComparison(personId: number): Promise<any> {
+    const person = await this.natsService.fetchAndClean(
+      { term: personId },
+      'person.findOne',
+      [
+        'uuidColumn',
+        'cityBirthId',
+        'pensionEntityId',
+        'financialEntityId',
+        'dueDate',
+        'isDuedateUndefined',
+        'gender',
+        'civilStatus',
+        'surnameHusband',
+        'deathCertificationNumber',
+        'reasonDeath',
+        'phoneNumber',
+        'nua',
+        'accountNumber',
+        'sigepStatus',
+        'idPersonSeansir',
+        'dateLastContribution',
+        'personAffiliates',
+        'birthDate',
+        'dateDeath',
+        'deathCertification',
+        'createdAt',
+        'updatedAt',
+        'deletedAt',
+        'deathCertificateNumber',
+        'cellPhoneNumber',
+        'idPersonSenasir',
+        'status',
+      ],
+    );
+    if (person.personFingerprints.length === 0) {
+      return [];
+    }
+    const fingerprintsData = [];
+    try {
+      await this.ftp.connectToFtp();
+      for (const fingerprint of person.personFingerprints) {
+        try {
+          console.log(`Processing fingerprint ID: ${fingerprint.id}`);
+          const fileBuffer = await this.ftp.downloadFile(fingerprint.path);
+          const wsqBase64 = fileBuffer.toString('base64');
+          fingerprintsData.push({
+            id: fingerprint.id,
+            quality: fingerprint.quality,
+            fingerprintType: fingerprint.fingerprintType,
+            wsqBase64,
+          });
+        } catch (error) {
+          console.error(
+            `Failed to download file at path: ${fingerprint.path}`,
+            error,
+          );
+          throw new Error(
+            `Failed to download file at path: ${fingerprint.path}`,
+          );
+        }
+      }
+    } finally {
+      await this.ftp.onDestroy();
+    }
+    return fingerprintsData;
+  }
 }
