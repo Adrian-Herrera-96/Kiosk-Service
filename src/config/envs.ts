@@ -22,19 +22,24 @@ const envsSchema = joi
   .object({
     PORT: joi.number().required(),
     NATS_SERVERS: joi.array().items(joi.string()).required(),
+    DB_SYNCHRONIZE: joi.string().valid('true', 'false').default('false'),
   })
   .unknown(true);
 
 const { error, value } = envsSchema.validate({
   ...process.env,
   NATS_SERVERS: process.env.NATS_SERVERS?.split(','),
+  DB_SYNCHRONIZE: process.env.DB_SYNCHRONIZE?.toLowerCase(),
 });
 
 if (error) {
   throw new Error(`Config validation error: ${error.message}`);
 }
 
-const envVars: EnvVars = value;
+const envVars: EnvVars = {
+  ...value,
+  DB_SYNCHRONIZE: value.DB_SYNCHRONIZE === 'true',
+};
 
 export const PortEnvs = {
   port: envVars.PORT,
