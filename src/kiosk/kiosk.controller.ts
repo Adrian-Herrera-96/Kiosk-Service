@@ -16,7 +16,7 @@ export class KioskController {
   }
 
   @MessagePattern('kiosk.savePhotos')
-  async savePhotos(
+  savePhotos(
     @Payload()
     data: {
       personId: number;

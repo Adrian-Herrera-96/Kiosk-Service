@@ -74,7 +74,7 @@ export class KioskService {
       ci: `Person/images/kiosk/${data.personId}/ci`,
       face: `Person/images/kiosk/${data.personId}/face`,
     };
-    await this.ftp.connectToFtp();
+
     if (data.photoIdentityCard) {
       await this.uploadPhotoToFtp(
         data.photoIdentityCard,
@@ -89,8 +89,6 @@ export class KioskService {
         `${formattedDate}-face.png`,
       );
     }
-
-    await this.ftp.onDestroy();
     return { message: 'Fotos guardadas correctamente' };
   }
   private formatCurrentDate(date: Date): string {
@@ -148,7 +146,6 @@ export class KioskService {
     }
     const fingerprintsData = [];
     try {
-      await this.ftp.connectToFtp();
       for (const fingerprint of person.personFingerprints) {
         try {
           console.log(`Processing fingerprint ID: ${fingerprint.id}`);
@@ -170,8 +167,8 @@ export class KioskService {
           );
         }
       }
-    } finally {
-      await this.ftp.onDestroy();
+    } catch (error) {
+      console.error(error);
     }
     return fingerprintsData;
   }
