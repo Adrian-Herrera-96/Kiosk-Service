@@ -11,8 +11,9 @@ COPY . .
 
 RUN yarn run build
 
-CMD ["node", "dist/main.js"]
+RUN yarn migration:run
 
+CMD ["node", "dist/main.js"]
 
 # docker build -f dockerfile.prod -t kiosk-microservice .
 # docker run kiosk-microservice
