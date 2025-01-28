@@ -3,6 +3,7 @@ import { FtpService, NatsService } from 'src/common';
 import { KioskAuthenticationData } from './entities/kiosk-authentication-data.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class KioskService {
@@ -15,7 +16,7 @@ export class KioskService {
 
   async getDataPerson(identityCard: string) {
     const dataPerson = await this.natsService.fetchAndClean(
-      { term: identityCard },
+      { term: identityCard, field: 'identityCard' },
       'person.findOne',
       [
         'uuidColumn',
@@ -46,9 +47,13 @@ export class KioskService {
         'deathCertificateNumber',
         'cellPhoneNumber',
         'idPersonSenasir',
-        'status',
       ],
     );
+    if (!dataPerson.statusService)
+      throw new RpcException({
+        code: 404,
+        message: 'Persona no encontrada',
+      });
     const { firstName, lastName, secondName, mothersLastName, ...data } =
       dataPerson;
     return {
@@ -108,7 +113,7 @@ export class KioskService {
 
   async getFingerprintComparison(personId: number): Promise<any> {
     const person = await this.natsService.fetchAndClean(
-      { term: personId },
+      { term: personId, field: 'id' },
       'person.findOne',
       [
         'uuidColumn',
@@ -138,9 +143,13 @@ export class KioskService {
         'deathCertificateNumber',
         'cellPhoneNumber',
         'idPersonSenasir',
-        'status',
       ],
     );
+    if (!person.statusService)
+      throw new RpcException({
+        code: 404,
+        message: 'persona no encontrada',
+      });
     if (person.personFingerprints.length === 0) {
       return [];
     }
