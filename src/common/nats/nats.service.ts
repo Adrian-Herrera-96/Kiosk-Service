@@ -14,7 +14,7 @@ export class NatsService {
       this.client.send(service, data).pipe(
         map((response) => ({
           ...response,
-          status: true,
+          statusService: true,
         })),
         catchError((error) => {
           this.logger.error(
@@ -22,7 +22,7 @@ export class NatsService {
             error.message,
           );
           return of({
-            status: false,
+            statusService: false,
             message: 'Microservice call failed',
           });
         }),
