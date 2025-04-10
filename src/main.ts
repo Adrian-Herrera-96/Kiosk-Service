@@ -33,6 +33,5 @@ async function bootstrap() {
   );
 
   await app.listen();
-  logger.log(`Microservice running on port ${PortEnvs.port}`);
 }
 bootstrap();
