@@ -51,6 +51,11 @@ export class CreateTableKioskAuthenticationData1734549612254
             type: 'varchar',
             isNullable: false,
           },
+          {
+            name: 'created_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
         ],
       }),
     );
