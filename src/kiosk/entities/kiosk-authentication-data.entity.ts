@@ -1,4 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ schema: 'kiosk', name: 'kiosk_authentication_data' })
 export class KioskAuthenticationData {
@@ -25,4 +30,7 @@ export class KioskAuthenticationData {
 
   @Column()
   recognized_text_captured: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 }
