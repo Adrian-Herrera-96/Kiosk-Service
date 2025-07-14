@@ -20,11 +20,15 @@ export class KioskController {
     @Payload()
     data: {
       personId: number;
-      photoIdentityCard: Buffer;
-      photoFace: Buffer;
+      hasCI: boolean;
+      hasFace: boolean;
     },
   ) {
-    return this.kioskService.savePhotos(data);
+    return this.kioskService.savePhotos(
+      data.personId,
+      data.hasCI,
+      data.hasFace,
+    );
   }
 
   @MessagePattern('kiosk.getFingerprintComparison')
