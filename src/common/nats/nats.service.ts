@@ -12,17 +12,25 @@ export class NatsService {
   async firstValue(service: string, data: any): Promise<any> {
     return firstValueFrom(
       this.client.send(service, data).pipe(
-        map((response) => ({
-          ...response,
-          statusService: true,
-        })),
+        map((response) => {
+          if (Array.isArray(response)) {
+            return {
+              data: response,
+              serviceStatus: true,
+            };
+          }
+          return {
+            ...response,
+            serviceStatus: true,
+          };
+        }),
         catchError((error) => {
           this.logger.error(
             `Error calling microservice: ${service}`,
             error.message,
           );
           return of({
-            statusService: false,
+            serviceStatus: false,
             message: 'Microservice call failed',
           });
         }),
