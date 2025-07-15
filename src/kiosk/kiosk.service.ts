@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FtpService, NatsService } from 'src/common';
+import { NatsService } from 'src/common';
 import { KioskAuthenticationData } from './entities/kiosk-authentication-data.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,14 +8,13 @@ import { RpcException } from '@nestjs/microservices';
 @Injectable()
 export class KioskService {
   constructor(
-    private readonly natsService: NatsService,
+    private readonly nats: NatsService,
     @InjectRepository(KioskAuthenticationData)
     private kioskAuthenticationDataRepository: Repository<KioskAuthenticationData>,
-    private readonly ftp: FtpService,
   ) {}
 
   async getDataPerson(identityCard: string) {
-    const dataPerson = await this.natsService.fetchAndClean(
+    const dataPerson = await this.nats.fetchAndClean(
       { term: identityCard, field: 'identityCard' },
       'person.findOne',
       [
@@ -49,7 +48,7 @@ export class KioskService {
         'idPersonSenasir',
       ],
     );
-    if (!dataPerson.statusService)
+    if (!dataPerson.serviceStatus)
       throw new RpcException({
         code: 404,
         message: 'Persona no encontrada',
@@ -68,33 +67,25 @@ export class KioskService {
     return dataSaved;
   }
 
-  async savePhotos(data: {
-    personId: number;
-    photoIdentityCard?: Buffer;
-    photoFace?: Buffer;
-  }) {
+  async savePhotos(personId: number, hasCI: boolean, hasFace: boolean) {
     const now = new Date();
     const formattedDate = this.formatCurrentDate(now);
-    const basePaths = {
-      ci: `Person/images/kiosk/${data.personId}/ci`,
-      face: `Person/images/kiosk/${data.personId}/face`,
-    };
+    const photos = [];
 
-    if (data.photoIdentityCard) {
-      await this.uploadPhotoToFtp(
-        data.photoIdentityCard,
-        basePaths.ci,
-        `${formattedDate}-photoIdentityCard.png`,
-      );
+    if (hasCI) {
+      photos.push({
+        fileId: 'ci',
+        path: `Person/images/kiosk/${personId}/ci/${formattedDate}-photoIdentityCard.png`,
+      });
     }
-    if (data.photoFace) {
-      await this.uploadPhotoToFtp(
-        data.photoFace,
-        basePaths.face,
-        `${formattedDate}-face.png`,
-      );
+
+    if (hasFace) {
+      photos.push({
+        fileId: 'face',
+        path: `Person/images/kiosk/${personId}/face/${formattedDate}-photoFace.png`,
+      });
     }
-    return { message: 'Fotos guardadas correctamente' };
+    return photos;
   }
   private formatCurrentDate(date: Date): string {
     const datePart = date.toLocaleDateString('en-GB');
@@ -102,83 +93,10 @@ export class KioskService {
     return `${datePart.split('/').reverse().join('-')}-${timePart}`;
   }
 
-  private async uploadPhotoToFtp(
-    photoBuffer: Buffer,
-    basePath: string,
-    fileName: string,
-  ): Promise<void> {
-    const filePath = `${basePath}/${fileName}`;
-    await this.ftp.uploadFile(Buffer.from(photoBuffer), basePath, filePath);
-  }
-
   async getFingerprintComparison(personId: number): Promise<any> {
-    const person = await this.natsService.fetchAndClean(
-      { term: personId, field: 'id' },
-      'person.findOne',
-      [
-        'uuidColumn',
-        'cityBirthId',
-        'pensionEntityId',
-        'financialEntityId',
-        'dueDate',
-        'isDuedateUndefined',
-        'gender',
-        'civilStatus',
-        'surnameHusband',
-        'deathCertificationNumber',
-        'reasonDeath',
-        'phoneNumber',
-        'nua',
-        'accountNumber',
-        'sigepStatus',
-        'idPersonSeansir',
-        'dateLastContribution',
-        'personAffiliates',
-        'birthDate',
-        'dateDeath',
-        'deathCertification',
-        'createdAt',
-        'updatedAt',
-        'deletedAt',
-        'deathCertificateNumber',
-        'cellPhoneNumber',
-        'idPersonSenasir',
-      ],
-    );
-    if (!person.statusService)
-      throw new RpcException({
-        code: 404,
-        message: 'persona no encontrada',
-      });
-    if (person.personFingerprints.length === 0) {
-      return [];
-    }
-    const fingerprintsData = [];
-    try {
-      for (const fingerprint of person.personFingerprints) {
-        try {
-          console.log(`Processing fingerprint ID: ${fingerprint.id}`);
-          const fileBuffer = await this.ftp.downloadFile(fingerprint.path);
-          const wsqBase64 = fileBuffer.toString('base64');
-          fingerprintsData.push({
-            id: fingerprint.id,
-            quality: fingerprint.quality,
-            fingerprintType: fingerprint.fingerprintType,
-            wsqBase64,
-          });
-        } catch (error) {
-          console.error(
-            `Failed to download file at path: ${fingerprint.path}`,
-            error,
-          );
-          throw new Error(
-            `Failed to download file at path: ${fingerprint.path}`,
-          );
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
-    return fingerprintsData;
+    return await this.nats.firstValue('person.getFingerprints', {
+      id: personId,
+      columns: ['id', 'quality', 'path'],
+    });
   }
 }
