@@ -10,22 +10,11 @@ interface EnvVars {
   DB_USERNAME: string;
   DB_SCHEMA: string;
   DB_SYNCHRONIZE: boolean;
-  FTP_HOST: string;
-  FTP_USERNAME: string;
-  FTP_PASSWORD: string;
-  FTP_ROOT: string;
-  FTP_SSL: boolean;
 }
 
 const envsSchema = joi
   .object({
     NATS_SERVERS: joi.array().items(joi.string()).required(),
-
-    FTP_HOST: joi.string(),
-    FTP_USERNAME: joi.string(),
-    FTP_PASSWORD: joi.string(),
-    FTP_ROOT: joi.string(),
-    FTP_SSL: joi.boolean(),
 
     DB_PASSWORD: joi.string().required(),
     DB_DATABASE: joi.string().required(),
@@ -65,12 +54,4 @@ export const DbEnvs = {
   dbUsername: envVars.DB_USERNAME,
   dbSchema: envVars.DB_SCHEMA,
   dbSynchronize: envVars.DB_SYNCHRONIZE,
-};
-
-export const envsFtp = {
-  ftpHost: envVars.FTP_HOST,
-  ftpUsername: envVars.FTP_USERNAME,
-  ftpPassword: envVars.FTP_PASSWORD,
-  ftpRoot: envVars.FTP_ROOT,
-  ftpSsl: envVars.FTP_SSL,
 };
