@@ -34,7 +34,6 @@ export class KioskService {
         'accountNumber',
         'sigepStatus',
         'idPersonSeansir',
-        'dateLastContribution',
         'personAffiliates',
         'birthDate',
         'dateDeath',
